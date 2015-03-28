@@ -21,7 +21,7 @@ let createTestNeuron output =
     )
 
 [<Fact>]
-let ``when a neuron receives an input at it's threshold it sends a signal to the output neuron``() =
+let ``when a neuron receives an input at it's threshold it activates``() =
     // arrange
     latch.Reset() |> ignore
     let neuronFired = ref false
@@ -31,9 +31,10 @@ let ``when a neuron receives an input at it's threshold it sends a signal to the
     neuron.Post 10
 
     // assert
-    latch.WaitOne(100) |> ignore
+    latch.WaitOne(1000) |> ignore
     !neuronFired |> should equal true
 
+// this sometimes fails, which seems to be a timing issue related to the second output neuron
 [<Fact>]
 let ``when a neuron activates it sends a signal to all output neurons``() =
     // arrange
@@ -49,21 +50,26 @@ let ``when a neuron activates it sends a signal to all output neurons``() =
     neuron.Post 1
 
     // assert
-    latch.WaitOne(100) |> ignore
+    latch.WaitOne(10000) |> ignore
     !neuron1Fired |> should equal true
     !neuron2Fired |> should equal true
 
 [<Fact>]
-let ``when neuron receives an input under it's threshold it doesn't activate``() =
+let ``when the sum of the last 5 inputs is equal to or greater than a neuron's threshold, it activates``() =
     // arrange
-    let threshold = 10
     latch.Reset() |> ignore
     let neuronFired = ref false
     let neuron = createNeuron 10 [(createTestNeuron (fun () -> neuronFired := true))]
     
     // act
-    neuron.Post 9
+    neuron.Post 3
+    neuron.Post 0
+    neuron.Post 2
+    neuron.Post 1
+    neuron.Post 4
 
     // assert
-    latch.WaitOne(100) |> ignore
-    !neuronFired |> should equal false
+    latch.WaitOne(1000) |> ignore
+    !neuronFired |> should equal true
+
+// TODO: use only the last 5 values when checking for activation.
